@@ -1,0 +1,42 @@
+[
+  {
+    "country": "United Kingdom",
+    "revenue": 9003097.96
+  },
+  {
+    "country": "Netherlands",
+    "revenue": 285446.34
+  },
+  {
+    "country": "EIRE",
+    "revenue": 283453.96
+  },
+  {
+    "country": "Germany",
+    "revenue": 228867.14
+  },
+  {
+    "country": "France",
+    "revenue": 209715.11
+  },
+  {
+    "country": "Australia",
+    "revenue": 138521.31
+  },
+  {
+    "country": "Spain",
+    "revenue": 61577.11
+  },
+  {
+    "country": "Switzerland",
+    "revenue": 57089.9
+  },
+  {
+    "country": "Belgium",
+    "revenue": 41196.34
+  },
+  {
+    "country": "Sweden",
+    "revenue": 38378.33
+  }
+]

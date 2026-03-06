@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-commerce Real-Time Analytics Dashboard</title>
+  <meta name="description" content="Real-time e-commerce analytics dashboard powered by Kafka and PySpark streaming pipeline." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Background orbs -->
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="bg-orb orb3"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">&#9883;</span>
+        </div>
+        <div>
+          <h1 class="header-title">E-commerce Analytics</h1>
+          <p class="header-subtitle">Kafka &bull; PySpark &bull; Real-Time Pipeline</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-badge" id="statusBadge">
+          <span class="pulse"></span>
+          <span id="statusText">Loading…</span>
+        </div>
+        <div class="last-updated" id="lastUpdated"></div>
+      </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid" aria-label="Key Performance Indicators">
+      <div class="kpi-card" id="card-revenue">
+        <div class="kpi-icon revenue-icon">&#163;</div>
+        <div class="kpi-body">
+          <p class="kpi-label">Total Revenue</p>
+          <p class="kpi-value" id="kpi-revenue">—</p>
+          <p class="kpi-sub">All-time gross sales</p>
+        </div>
+        <div class="kpi-sparkline"></div>
+      </div>
+      <div class="kpi-card" id="card-orders">
+        <div class="kpi-icon orders-icon">&#128722;</div>
+        <div class="kpi-body">
+          <p class="kpi-label">Total Orders</p>
+          <p class="kpi-value" id="kpi-orders">—</p>
+          <p class="kpi-sub">Unique invoices processed</p>
+        </div>
+      </div>
+      <div class="kpi-card" id="card-customers">
+        <div class="kpi-icon customers-icon">&#128101;</div>
+        <div class="kpi-body">
+          <p class="kpi-label">Unique Customers</p>
+          <p class="kpi-value" id="kpi-customers">—</p>
+          <p class="kpi-sub">Distinct customer IDs</p>
+        </div>
+      </div>
+      <div class="kpi-card" id="card-products">
+        <div class="kpi-icon products-icon">&#128230;</div>
+        <div class="kpi-body">
+          <p class="kpi-label">Unique Products</p>
+          <p class="kpi-value" id="kpi-products">—</p>
+          <p class="kpi-sub">Distinct SKUs sold</p>
+        </div>
+      </div>
+      <div class="kpi-card" id="card-aov">
+        <div class="kpi-icon aov-icon">&#128200;</div>
+        <div class="kpi-body">
+          <p class="kpi-label">Avg Order Value</p>
+          <p class="kpi-value" id="kpi-aov">—</p>
+          <p class="kpi-sub">Revenue per invoice</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Row 1 -->
+    <section class="charts-row">
+      <div class="chart-card wide" id="section-trend">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Monthly Revenue Trend</h2>
+            <p class="chart-desc">Gross revenue aggregated per calendar month</p>
+          </div>
+          <div class="chart-badge trend-badge">Line</div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="revenueTrendChart" aria-label="Monthly Revenue Trend Chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" id="section-country-revenue">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Revenue by Country</h2>
+            <p class="chart-desc">Top 10 markets by gross revenue</p>
+          </div>
+          <div class="chart-badge country-badge">Bar</div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="countryRevenueChart" aria-label="Revenue by Country Chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Row 2 -->
+    <section class="charts-row">
+      <div class="chart-card" id="section-top-products">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Top 20 Products</h2>
+            <p class="chart-desc">Ranked by total gross revenue</p>
+          </div>
+          <div class="chart-badge products-badge">Bar</div>
+        </div>
+        <div class="chart-wrapper tall">
+          <canvas id="topProductsChart" aria-label="Top Products Chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" id="section-daily-orders">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">Daily Order Volume</h2>
+            <p class="chart-desc">Number of unique invoices per day</p>
+          </div>
+          <div class="chart-badge daily-badge">Area</div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="dailyOrdersChart" aria-label="Daily Orders Chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Data sourced from <strong>Online Retail Dataset</strong> via Kafka &rarr; PySpark streaming pipeline.</p>
+    </footer>
+  </div>
+
+  <script>
+    // ───────────────────────────────────────────────
+    // Helpers
+    // ───────────────────────────────────────────────
+    const fmt = {
+      currency: (v) => '£' + Number(v).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      number:   (v) => Number(v).toLocaleString('en-GB'),
+      compact:  (v) => {
+        if (v >= 1_000_000) return '£' + (v / 1_000_000).toFixed(2) + 'M';
+        if (v >= 1_000)     return '£' + (v / 1_000).toFixed(1) + 'K';
+        return '£' + v;
+      }
+    };
+
+    function animateCount(el, target, formatter, duration = 1500) {
+      let start = null;
+      const step = (ts) => {
+        if (!start) start = ts;
+        const progress = Math.min((ts - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
+        const current = Math.floor(eased * target);
+        el.textContent = formatter(current);
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = formatter(target);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // ───────────────────────────────────────────────
+    // Chart.js global defaults
+    // ───────────────────────────────────────────────
+    Chart.defaults.color = 'rgba(255,255,255,0.6)';
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.size = 12;
+
+    const GRID_COLOR = 'rgba(255,255,255,0.06)';
+    const PALETTE = [
+      '#6366f1','#8b5cf6','#ec4899','#f43f5e',
+      '#f97316','#eab308','#22c55e','#14b8a6',
+      '#06b6d4','#3b82f6','#a855f7','#f472b6'
+    ];
+
+    function makeGradient(ctx, color1, color2) {
+      const g = ctx.createLinearGradient(0, 0, 0, 400);
+      g.addColorStop(0, color1);
+      g.addColorStop(1, color2);
+      return g;
+    }
+
+    // ───────────────────────────────────────────────
+    // Data Loading
+    // ───────────────────────────────────────────────
+    const DATA_BASE = '../output/';
+
+    async function fetchJSON(file) {
+      const res = await fetch(DATA_BASE + file);
+      if (!res.ok) throw new Error(`Failed to fetch ${file}: ${res.status}`);
+      return res.json();
+    }
+
+    async function loadAll() {
+      const [summary, countryRev, topProds, monthlyRev, dailyOrders] = await Promise.all([
+        fetchJSON('summary.json'),
+        fetchJSON('revenue_by_country.json'),
+        fetchJSON('top_products.json'),
+        fetchJSON('revenue_over_time.json'),
+        fetchJSON('daily_orders.json'),
+      ]);
+      return { summary, countryRev, topProds, monthlyRev, dailyOrders };
+    }
+
+    // ───────────────────────────────────────────────
+    // KPI Rendering
+    // ───────────────────────────────────────────────
+    function renderKPIs(summary) {
+      const kpis = [
+        { id: 'kpi-revenue',   value: summary.total_revenue,   fmt: fmt.currency },
+        { id: 'kpi-orders',    value: summary.total_orders,    fmt: fmt.number },
+        { id: 'kpi-customers', value: summary.unique_customers, fmt: fmt.number },
+        { id: 'kpi-products',  value: summary.unique_products,  fmt: fmt.number },
+        { id: 'kpi-aov',       value: summary.avg_order_value,  fmt: fmt.currency },
+      ];
+      kpis.forEach(({ id, value, fmt: f }) => {
+        const el = document.getElementById(id);
+        if (el) animateCount(el, value, f);
+      });
+    }
+
+    // ───────────────────────────────────────────────
+    // Charts
+    // ───────────────────────────────────────────────
+    function buildRevenueTrend(data) {
+      const ctx = document.getElementById('revenueTrendChart').getContext('2d');
+      const grad = makeGradient(ctx, 'rgba(99,102,241,0.5)', 'rgba(99,102,241,0.01)');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.month),
+          datasets: [{
+            label: 'Monthly Revenue (£)',
+            data: data.map(d => d.revenue),
+            borderColor: '#6366f1',
+            backgroundColor: grad,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#6366f1',
+            tension: 0.4,
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15,15,30,0.9)',
+              titleFont: { weight: '600' },
+              callbacks: { label: ctx => fmt.currency(ctx.parsed.y) }
+            }
+          },
+          scales: {
+            x: { grid: { color: GRID_COLOR }, ticks: { maxRotation: 45, font: { size: 11 } } },
+            y: { grid: { color: GRID_COLOR }, ticks: { callback: v => fmt.compact(v) } }
+          }
+        }
+      });
+    }
+
+    function buildCountryRevenue(data) {
+      const ctx = document.getElementById('countryRevenueChart').getContext('2d');
+      const colors = data.map((_, i) => PALETTE[i % PALETTE.length]);
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map(d => d.country),
+          datasets: [{
+            label: 'Revenue (£)',
+            data: data.map(d => d.revenue),
+            backgroundColor: colors.map(c => c + 'cc'),
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15,15,30,0.9)',
+              callbacks: { label: ctx => fmt.currency(ctx.parsed.x) }
+            }
+          },
+          scales: {
+            x: { grid: { color: GRID_COLOR }, ticks: { callback: v => fmt.compact(v) } },
+            y: { grid: { color: GRID_COLOR } }
+          }
+        }
+      });
+    }
+
+    function buildTopProducts(data) {
+      const ctx = document.getElementById('topProductsChart').getContext('2d');
+      const grad = makeGradient(ctx, 'rgba(139,92,246,0.9)', 'rgba(99,102,241,0.7)');
+      const labels = data.map(d => {
+        const name = d.Description || d.description || '(unknown)';
+        return name.length > 30 ? name.slice(0, 28) + '…' : name;
+      });
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Revenue (£)',
+            data: data.map(d => d.total_revenue),
+            backgroundColor: grad,
+            borderColor: '#8b5cf6',
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15,15,30,0.9)',
+              callbacks: { label: ctx => fmt.currency(ctx.parsed.x) }
+            }
+          },
+          scales: {
+            x: { grid: { color: GRID_COLOR }, ticks: { callback: v => fmt.compact(v) } },
+            y: { grid: { color: GRID_COLOR }, ticks: { font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function buildDailyOrders(data) {
+      const ctx = document.getElementById('dailyOrdersChart').getContext('2d');
+      const grad = makeGradient(ctx, 'rgba(20,184,166,0.5)', 'rgba(20,184,166,0.01)');
+      // Downsample if too many points (keep every Nth point for readability)
+      const step = data.length > 300 ? Math.ceil(data.length / 200) : 1;
+      const sampled = data.filter((_, i) => i % step === 0);
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sampled.map(d => d.date),
+          datasets: [{
+            label: 'Orders',
+            data: sampled.map(d => d.orders),
+            borderColor: '#14b8a6',
+            backgroundColor: grad,
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15,15,30,0.9)',
+              callbacks: { label: ctx => `${fmt.number(ctx.parsed.y)} orders` }
+            }
+          },
+          scales: {
+            x: { grid: { color: GRID_COLOR }, ticks: { maxTicksLimit: 12, font: { size: 11 } } },
+            y: { grid: { color: GRID_COLOR }, ticks: { callback: v => fmt.number(v) } }
+          }
+        }
+      });
+    }
+
+    // ───────────────────────────────────────────────
+    // Bootstrap
+    // ───────────────────────────────────────────────
+    async function init() {
+      const statusBadge = document.getElementById('statusBadge');
+      const statusText  = document.getElementById('statusText');
+      const lastUpdated = document.getElementById('lastUpdated');
+
+      try {
+        const { summary, countryRev, topProds, monthlyRev, dailyOrders } = await loadAll();
+
+        renderKPIs(summary);
+        buildRevenueTrend(monthlyRev);
+        buildCountryRevenue(countryRev);
+        buildTopProducts(topProds);
+        buildDailyOrders(dailyOrders);
+
+        statusBadge.classList.add('live');
+        statusText.textContent = 'Data Loaded';
+        lastUpdated.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error(err);
+        statusBadge.classList.add('error');
+        statusText.textContent = 'Load Error — serve via HTTP';
+        lastUpdated.textContent = err.message;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
