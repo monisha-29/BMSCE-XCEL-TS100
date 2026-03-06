@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, ExternalLink, Calendar, Brain, CheckCircle, Loader2, Trash2, LogOut } from "lucide-react";
+import { Plus, ExternalLink, Calendar, Brain, CheckCircle, Loader2, Trash2, LogOut, Settings } from "lucide-react";
 import meetingService from "@/services/meetingService";
 import { useToast } from "@/hooks/use-toast";
 
@@ -139,9 +139,14 @@ const Dashboard = () => {
               Manage meetings, analyze transcripts, and auto-create Jira tasks
             </p>
           </div>
-          <Button variant="ghost" onClick={handleLogout} className="text-muted-foreground hover:text-red-400">
-            <LogOut className="h-4 w-4 mr-2" /> Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-primary">
+              <Settings className="h-4 w-4 mr-2" /> Settings
+            </Button>
+            <Button variant="ghost" onClick={handleLogout} className="text-muted-foreground hover:text-red-400">
+              <LogOut className="h-4 w-4 mr-2" /> Logout
+            </Button>
+          </div>
         </div>
 
         {/* New Meeting Section */}

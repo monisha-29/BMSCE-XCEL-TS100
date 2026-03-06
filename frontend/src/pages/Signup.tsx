@@ -12,8 +12,6 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    jiraEmail: "",
-    jiraApiToken: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,39 +27,20 @@ const Signup = () => {
 
     setLoading(true);
 
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          jiraEmail: formData.jiraEmail,
-          jiraApiToken: formData.jiraApiToken,
-        }),
-      });
+    // Fake auth — just create a local session
+    setTimeout(() => {
+      const fakeUser = {
+        _id: "user_001",
+        name: formData.name,
+        email: formData.email,
+      };
+      const fakeToken = btoa(JSON.stringify({ id: fakeUser._id, exp: Date.now() / 1000 + 86400 }));
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Store token and user data
-        localStorage.setItem('token', data.user.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Navigate to dashboard
-        navigate("/dashboard");
-      } else {
-        setError(data.message || 'Registration failed');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-      console.error('Registration error:', err);
-    } finally {
+      localStorage.setItem("token", fakeToken);
+      localStorage.setItem("user", JSON.stringify(fakeUser));
+      navigate("/dashboard");
       setLoading(false);
-    }
+    }, 500);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,7 +48,6 @@ const Signup = () => {
       ...prev,
       [e.target.name]: e.target.value
     }));
-    // Clear error when user starts typing
     if (error) setError("");
   };
 
@@ -86,7 +64,7 @@ const Signup = () => {
             Join curia.AI
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Create your account and automate your workflow
+            Create your account to get started
           </CardDescription>
         </CardHeader>
         
@@ -132,11 +110,11 @@ const Signup = () => {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Create a password (min 6 characters)"
+                placeholder="Create a password (min 4 characters)"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                minLength={6}
+                minLength={4}
                 className="bg-background/50 border-border/50 focus:border-primary/50 transition-all duration-300"
               />
             </div>
@@ -153,37 +131,6 @@ const Signup = () => {
                 required
                 className="bg-background/50 border-border/50 focus:border-primary/50 transition-all duration-300"
               />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="jiraEmail">Jira Email</Label>
-              <Input
-                id="jiraEmail"
-                name="jiraEmail"
-                type="email"
-                placeholder="Enter your Jira email"
-                value={formData.jiraEmail}
-                onChange={handleChange}
-                required
-                className="bg-background/50 border-border/50 focus:border-primary/50 transition-all duration-300"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="jiraApiToken">Jira API Token</Label>
-              <Input
-                id="jiraApiToken"
-                name="jiraApiToken"
-                type="password"
-                placeholder="Enter your Jira API token"
-                value={formData.jiraApiToken}
-                onChange={handleChange}
-                required
-                className="bg-background/50 border-border/50 focus:border-primary/50 transition-all duration-300"
-              />
-              <p className="text-xs text-muted-foreground">
-                Get your API token from Jira settings
-              </p>
             </div>
             
             <Button 
@@ -209,4 +156,5 @@ const Signup = () => {
     </div>
   );
 };
+
 export default Signup;

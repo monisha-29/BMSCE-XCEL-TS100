@@ -19,36 +19,24 @@ const Login = () => {
     setError("");
     setLoading(true);
 
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    // Fake auth — accept any non-empty credentials
+    setTimeout(() => {
+      if (formData.email && formData.password.length >= 4) {
+        const fakeUser = {
+          _id: "user_001",
+          name: formData.email.split("@")[0],
           email: formData.email,
-          password: formData.password,
-        }),
-      });
+        };
+        const fakeToken = btoa(JSON.stringify({ id: fakeUser._id, exp: Date.now() / 1000 + 86400 }));
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Store token and user data
-        localStorage.setItem('token', data.user.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Navigate to dashboard
+        localStorage.setItem("token", fakeToken);
+        localStorage.setItem("user", JSON.stringify(fakeUser));
         navigate("/dashboard");
       } else {
-        setError(data.message || 'Login failed');
+        setError("Please enter a valid email and password (min 4 chars)");
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
-      console.error('Login error:', err);
-    } finally {
       setLoading(false);
-    }
+    }, 500);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +44,6 @@ const Login = () => {
       ...prev,
       [e.target.name]: e.target.value
     }));
-    // Clear error when user starts typing
     if (error) setError("");
   };
 

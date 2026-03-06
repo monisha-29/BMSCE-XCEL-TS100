@@ -9,6 +9,11 @@ class MeetingService {
         };
     }
 
+    private getJiraConfig() {
+        const stored = localStorage.getItem('jiraConfig');
+        return stored ? JSON.parse(stored) : null;
+    }
+
     // Get all meetings
     async getMeetings() {
         try {
@@ -64,9 +69,11 @@ class MeetingService {
     // Analyze a meeting (AI summarization + Jira)
     async analyzeMeeting(id: string) {
         try {
+            const jiraConfig = this.getJiraConfig();
             const response = await fetch(`${API_URL}/${id}/analyze`, {
                 method: 'POST',
-                headers: this.getHeaders()
+                headers: this.getHeaders(),
+                body: JSON.stringify({ jiraConfig })
             });
             return await response.json();
         } catch (error) {
