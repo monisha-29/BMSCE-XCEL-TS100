@@ -7,3 +7,4 @@ __pycache__/
 dist/
 build/
 meet-bot/node_modules/
+SypanseSquad/kafka.tgz
